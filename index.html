@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>剧本诊断 — 短剧商业潜力评估</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --primary: #4F6EF7;
+  --primary-light: #EEF1FE;
+  --success: #00B578;
+  --warning: #FA8C16;
+  --danger: #FF4D4F;
+  --gray-1: #1D2129;
+  --gray-2: #4E5969;
+  --gray-3: #86909C;
+  --gray-4: #C9CDD4;
+  --gray-5: #E5E6EB;
+  --gray-6: #F2F3F5;
+  --gray-7: #F7F8FA;
+  --white: #FFFFFF;
+  --radius: 12px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.1);
+}
+body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif; background: var(--gray-7); color: var(--gray-1); line-height: 1.6; min-height: 100vh; }
+.container { max-width: 800px; margin: 0 auto; padding: 20px 16px 40px; }
+
+/* ========== Header ========== */
+.header { display:flex; align-items:center; gap:12px; padding:16px 0; margin-bottom:8px; }
+.header-back { width:32px; height:32px; border-radius:8px; border:1px solid var(--gray-5); display:flex; align-items:center; justify-content:center; cursor:pointer; background:var(--white); color:var(--gray-2); font-size:18px; text-decoration:none; }
+.header-back:hover { background:var(--gray-6); }
+.header-title { font-size:17px; font-weight:600; color:var(--gray-1); }
+
+/* ========== Card ========== */
+.card { background:var(--white); border-radius:var(--radius); padding:24px; margin-bottom:16px; box-shadow:var(--shadow); }
+.card-title { font-size:16px; font-weight:600; color:var(--gray-1); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+
+/* ========== Input Page ========== */
+.page { display:none; }
+.page.active { display:block; }
+.hero-title { font-size:26px; font-weight:700; text-align:center; margin-bottom:8px; background:linear-gradient(135deg, var(--primary), #8B5CF6); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.hero-sub { text-align:center; color:var(--gray-3); font-size:14px; margin-bottom:24px; }
+
+.tabs { display:flex; gap:0; margin-bottom:16px; background:var(--gray-6); border-radius:10px; padding:3px; }
+.tab { flex:1; text-align:center; padding:10px 0; border-radius:8px; cursor:pointer; font-size:14px; font-weight:500; color:var(--gray-3); transition:all .2s; }
+.tab.active { background:var(--white); color:var(--gray-1); box-shadow:0 1px 4px rgba(0,0,0,0.08); }
+
+.textarea-wrap { position:relative; margin-bottom:12px; }
+.textarea-wrap textarea { width:100%; min-height:240px; max-height:480px; padding:16px; border:1.5px solid var(--gray-5); border-radius:10px; font-size:14px; line-height:1.7; resize:vertical; outline:none; transition:border-color .2s; font-family:inherit; }
+.textarea-wrap textarea:focus { border-color:var(--primary); }
+.textarea-wrap textarea::placeholder { color:var(--gray-4); }
+.char-count { position:absolute; right:12px; bottom:12px; font-size:12px; color:var(--gray-4); }
+
+.upload-area { border:2px dashed var(--gray-5); border-radius:10px; padding:48px 24px; text-align:center; cursor:pointer; transition:all .2s; display:none; }
+.upload-area:hover { border-color:var(--primary); background:var(--primary-light); }
+.upload-area.active-tab { display:block; }
+.upload-icon { font-size:40px; margin-bottom:12px; }
+.upload-text { color:var(--gray-2); font-size:14px; }
+.upload-hint { color:var(--gray-4); font-size:12px; margin-top:8px; }
+.file-info { display:none; padding:16px; border:1.5px solid var(--gray-5); border-radius:10px; margin-bottom:12px; }
+.file-info.show { display:flex; align-items:center; gap:12px; }
+.file-info .name { flex:1; font-size:14px; font-weight:500; }
+.file-info .meta { font-size:12px; color:var(--gray-3); }
+.file-info .remove { cursor:pointer; color:var(--gray-4); font-size:18px; }
+.file-info .remove:hover { color:var(--danger); }
+
+.samples { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+.sample-tag { padding:6px 14px; border-radius:20px; font-size:13px; background:var(--gray-6); color:var(--gray-2); cursor:pointer; transition:all .2s; border:1px solid transparent; }
+.sample-tag:hover { border-color:var(--primary); color:var(--primary); background:var(--primary-light); }
+.samples-label { font-size:13px; color:var(--gray-3); margin-bottom:8px; }
+
+.btn-primary { display:block; width:100%; padding:14px 0; border:none; border-radius:10px; background:linear-gradient(135deg, var(--primary), #8B5CF6); color:var(--white); font-size:16px; font-weight:600; cursor:pointer; transition:all .2s; }
+.btn-primary:hover { opacity:0.9; transform:translateY(-1px); box-shadow:0 4px 16px rgba(79,110,247,0.3); }
+.btn-primary:disabled { opacity:0.4; cursor:not-allowed; transform:none; box-shadow:none; }
+
+/* ========== Progress Page ========== */
+.progress-title { text-align:center; font-size:18px; font-weight:600; margin-bottom:28px; }
+.steps { list-style:none; }
+.steps li { display:flex; align-items:center; gap:12px; padding:12px 0; font-size:14px; color:var(--gray-3); border-bottom:1px solid var(--gray-6); }
+.steps li:last-child { border-bottom:none; }
+.steps li .icon { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
+.steps li.done { color:var(--gray-1); }
+.steps li.done .icon { background:var(--success); color:#fff; }
+.steps li.active { color:var(--primary); font-weight:500; }
+.steps li.active .icon { background:var(--primary-light); color:var(--primary); animation:pulse 1.5s infinite; }
+.steps li.pending .icon { background:var(--gray-6); color:var(--gray-4); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+.progress-bar-wrap { margin:24px 0 16px; }
+.progress-bar { height:6px; background:var(--gray-6); border-radius:3px; overflow:hidden; }
+.progress-bar-fill { height:100%; background:linear-gradient(90deg, var(--primary), #8B5CF6); border-radius:3px; transition:width .5s ease; }
+.progress-pct { text-align:center; font-size:13px; color:var(--gray-3); margin-top:8px; }
+
+.btn-cancel { display:block; margin:16px auto 0; padding:10px 32px; border:1px solid var(--gray-5); border-radius:8px; background:var(--white); color:var(--gray-3); font-size:14px; cursor:pointer; }
+.btn-cancel:hover { border-color:var(--gray-4); color:var(--gray-2); }
+
+/* ========== Report Page ========== */
+.score-ring-container { text-align:center; padding:32px 0 16px; }
+.score-ring { position:relative; width:140px; height:140px; margin:0 auto 16px; }
+.score-ring svg { transform:rotate(-90deg); }
+.score-ring-bg { fill:none; stroke:var(--gray-6); stroke-width:8; }
+.score-ring-fill { fill:none; stroke-width:8; stroke-linecap:round; transition:stroke-dashoffset 1.5s ease; }
+.score-ring-text { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; }
+.score-number { font-size:42px; font-weight:800; line-height:1; }
+.score-total { font-size:13px; color:var(--gray-3); }
+.grade-badge { display:inline-block; padding:4px 16px; border-radius:20px; font-size:14px; font-weight:600; margin-bottom:8px; }
+.report-subtitle { font-size:14px; color:var(--gray-2); text-align:center; }
+.report-meta { text-align:center; color:var(--gray-3); font-size:13px; margin-top:8px; }
+
+/* Section scores */
+.section-scores { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.section-card { background:var(--gray-7); border-radius:10px; padding:16px 12px; text-align:center; cursor:pointer; transition:all .2s; border:1.5px solid transparent; }
+.section-card:hover { border-color:var(--primary); background:var(--primary-light); }
+.section-card .label { font-size:13px; color:var(--gray-3); margin-bottom:6px; }
+.section-card .score { font-size:24px; font-weight:700; }
+.section-card .bar { height:4px; background:var(--gray-5); border-radius:2px; margin:8px 0 4px; overflow:hidden; }
+.section-card .bar-fill { height:100%; border-radius:2px; }
+.section-card .grade { font-size:12px; font-weight:500; }
+
+/* Radar */
+.radar-wrap { height:360px; }
+
+/* Highlight tags */
+.highlight-section { margin-bottom:16px; }
+.highlight-label { font-size:14px; font-weight:600; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+.highlight-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+.highlight-tag { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-radius:8px; font-size:13px; cursor:pointer; transition:all .2s; }
+.highlight-tag:hover { opacity:0.85; }
+.highlight-tag .dim-name { font-weight:500; }
+.highlight-tag .dim-score { font-weight:700; font-size:15px; }
+.highlight-tag.good { background:#E8F9EF; color:#0D8050; }
+.highlight-tag.bad { background:#FFF3E0; color:#D46B08; }
+
+/* Suggestions */
+.suggestion-item { padding:16px 0; border-bottom:1px solid var(--gray-6); }
+.suggestion-item:last-child { border-bottom:none; }
+.suggestion-num { display:inline-flex; width:24px; height:24px; border-radius:6px; background:var(--primary); color:#fff; font-size:12px; font-weight:600; align-items:center; justify-content:center; margin-right:10px; flex-shrink:0; vertical-align:top; }
+.suggestion-title { font-weight:600; font-size:14px; color:var(--gray-1); }
+.suggestion-detail { margin-top:6px; padding-left:34px; font-size:13px; color:var(--gray-2); line-height:1.7; }
+
+/* Detail accordion */
+.accordion-header { display:flex; align-items:center; justify-content:space-between; padding:14px 0; cursor:pointer; border-bottom:1px solid var(--gray-6); }
+.accordion-header:last-child { border-bottom:none; }
+.accordion-header .left { display:flex; align-items:center; gap:10px; font-size:15px; font-weight:600; }
+.accordion-header .arrow { transition:transform .3s; color:var(--gray-4); }
+.accordion-header.open .arrow { transform:rotate(90deg); }
+.accordion-body { display:none; padding:0 0 16px; }
+.accordion-header.open + .accordion-body { display:block; }
+.dim-block { padding:16px 0; border-bottom:1px solid var(--gray-6); }
+.dim-block:last-child { border-bottom:none; }
+.dim-header { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+.dim-name-label { font-size:14px; font-weight:600; }
+.dim-score-badge { font-size:12px; padding:2px 10px; border-radius:10px; font-weight:600; }
+.dim-analysis { margin-bottom:12px; }
+.dim-analysis li, .dim-improvements li { font-size:13px; color:var(--gray-2); line-height:1.7; margin-bottom:4px; padding-left:4px; }
+.dim-improvements-title { font-size:13px; font-weight:600; color:var(--warning); margin-bottom:6px; }
+
+/* Actions */
+.actions { display:flex; gap:10px; margin-bottom:20px; }
+.btn-action { flex:1; padding:12px 0; border-radius:8px; border:1.5px solid var(--gray-5); background:var(--white); font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; color:var(--gray-2); transition:all .2s; }
+.btn-action:hover { border-color:var(--primary); color:var(--primary); background:var(--primary-light); }
+.feedback { text-align:center; padding:16px 0; }
+.feedback-title { font-size:14px; color:var(--gray-3); margin-bottom:12px; }
+.feedback-btns { display:flex; justify-content:center; gap:12px; }
+.feedback-btn { padding:8px 16px; border-radius:20px; border:1px solid var(--gray-5); background:var(--white); cursor:pointer; font-size:13px; transition:all .2s; }
+.feedback-btn:hover { border-color:var(--primary); color:var(--primary); }
+.feedback-btn.selected { border-color:var(--primary); background:var(--primary-light); color:var(--primary); }
+
+/* Warning banner */
+.warning-banner { background:#FFF7E6; border:1px solid #FFD591; border-radius:8px; padding:12px 16px; font-size:13px; color:#D46B08; display:flex; align-items:center; gap:8px; margin-bottom:16px; }
+
+/* Toast */
+.toast { position:fixed; top:24px; left:50%; transform:translateX(-50%) translateY(-100px); background:var(--gray-1); color:#fff; padding:10px 24px; border-radius:8px; font-size:14px; z-index:999; transition:transform .3s ease; }
+.toast.show { transform:translateX(-50%) translateY(0); }
+
+/* Responsive */
+@media(max-width:600px) {
+  .section-scores { grid-template-columns:repeat(2,1fr); }
+  .highlight-grid { grid-template-columns:1fr; }
+  .hero-title { font-size:22px; }
+  .radar-wrap { height:300px; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ==================== PAGE 1: INPUT ==================== -->
+  <div class="page active" id="pageInput">
+    <div class="header">
+      <a class="header-back" href="javascript:void(0)">←</a>
+      <span class="header-title">剧本诊断</span>
+    </div>
+
+    <div class="card">
+      <div class="hero-title">剧本诊断</div>
+      <div class="hero-sub">上传你的短剧剧本，获得 17 维度商业潜力诊断报告</div>
+
+      <div class="tabs">
+        <div class="tab active" data-tab="paste" onclick="switchTab('paste')">粘贴文本</div>
+        <div class="tab" data-tab="upload" onclick="switchTab('upload')">上传文件</div>
+      </div>
+
+      <!-- Paste -->
+      <div class="textarea-wrap" id="pasteArea">
+        <textarea id="scriptInput" placeholder="请粘贴剧本内容，建议包含完整的剧本正文（角色、场景、对白等）"></textarea>
+        <span class="char-count"><span id="charCount">0</span> 字 / 10万字</span>
+      </div>
+
+      <!-- Upload -->
+      <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-icon">📄</div>
+        <div class="upload-text">拖拽文件到此处，或点击选择文件</div>
+        <div class="upload-hint">支持 .txt .docx，单文件最大 5MB</div>
+        <input type="file" id="fileInput" accept=".txt,.docx" style="display:none" onchange="handleFile(event)">
+      </div>
+      <div class="file-info" id="fileInfo">
+        <span style="font-size:24px">📄</span>
+        <div style="flex:1">
+          <div class="name" id="fileName"></div>
+          <div class="meta" id="fileMeta"></div>
+        </div>
+        <span class="remove" onclick="removeFile()">✕</span>
+      </div>
+
+      <div class="samples-label">或试试示例：</div>
+      <div class="samples">
+        <span class="sample-tag" onclick="loadSample('ancient')">古装虐恋 · 明月照君归</span>
+        <span class="sample-tag" onclick="loadSample('modern')">现代甜宠 · 你好星期六</span>
+        <span class="sample-tag" onclick="loadSample('suspense')">悬疑犯罪 · 第七根琴弦</span>
+      </div>
+
+      <button class="btn-primary" id="btnStart" disabled onclick="startEval()">开始诊断</button>
+    </div>
+  </div>
+
+  <!-- ==================== PAGE 2: PROGRESS ==================== -->
+  <div class="page" id="pageProgress">
+    <div class="header">
+      <a class="header-back" href="javascript:void(0)" onclick="cancelEval()">←</a>
+      <span class="header-title">剧本诊断</span>
+    </div>
+
+    <div class="card">
+      <div class="progress-title">正在为你诊断剧本...</div>
+      <ul class="steps" id="stepsList">
+        <li class="pending" data-step="0"><span class="icon">○</span>识别剧本信息</li>
+        <li class="pending" data-step="1"><span class="icon">○</span>叙事与剧本基因分析</li>
+        <li class="pending" data-step="2"><span class="icon">○</span>市场定位评估</li>
+        <li class="pending" data-step="3"><span class="icon">○</span>合规性检测</li>
+        <li class="pending" data-step="4"><span class="icon">○</span>商业化评估</li>
+        <li class="pending" data-step="5"><span class="icon">○</span>生成改稿建议</li>
+      </ul>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+        <div class="progress-pct" id="progressPct">0%</div>
+      </div>
+      <button class="btn-cancel" onclick="cancelEval()">取消诊断</button>
+    </div>
+  </div>
+
+  <!-- ==================== PAGE 3: REPORT ==================== -->
+  <div class="page" id="pageReport">
+    <div class="header">
+      <a class="header-back" href="javascript:void(0)" onclick="goToInput()">←</a>
+      <span class="header-title">诊断报告</span>
+    </div>
+
+    <!-- A: Score Ring -->
+    <div class="card">
+      <div class="score-ring-container">
+        <div style="font-size:18px;font-weight:700;margin-bottom:4px" id="reportTitle">《明月照君归》诊断报告</div>
+        <div class="report-meta" id="reportMeta">女频 · 古装宫斗、虐恋情深 · 11集</div>
+        <div class="score-ring" id="scoreRing">
+          <svg width="140" height="140" viewBox="0 0 140 140">
+            <circle class="score-ring-bg" cx="70" cy="70" r="60"/>
+            <circle class="score-ring-fill" id="scoreRingFill" cx="70" cy="70" r="60" stroke-dasharray="377" stroke-dashoffset="377"/>
+          </svg>
+          <div class="score-ring-text">
+            <div class="score-number" id="scoreNumber">0</div>
+            <div class="score-total">/ 100</div>
+          </div>
+        </div>
+        <div class="grade-badge" id="gradeBadge">B级</div>
+        <div class="report-subtitle" id="gradeDesc">商业潜力中等，需打磨</div>
+      </div>
+    </div>
+
+    <!-- Warning -->
+    <div class="warning-banner" id="warningBanner" style="display:none">
+      <span>⚠️</span><span id="warningText"></span>
+    </div>
+
+    <!-- B: Section Scores -->
+    <div class="card">
+      <div class="card-title">📊 板块得分</div>
+      <div class="section-scores" id="sectionScores"></div>
+    </div>
+
+    <!-- C: Radar -->
+    <div class="card">
+      <div class="card-title">🎯 17 维度全景</div>
+      <div class="radar-wrap" id="radarChart"></div>
+    </div>
+
+    <!-- D: Highlights -->
+    <div class="card">
+      <div class="highlight-section">
+        <div class="highlight-label">🟢 你的强项</div>
+        <div class="highlight-grid" id="goodDims"></div>
+      </div>
+      <div class="highlight-section">
+        <div class="highlight-label">🔶 建议提升</div>
+        <div class="highlight-grid" id="badDims"></div>
+      </div>
+    </div>
+
+    <!-- E: Suggestions -->
+    <div class="card">
+      <div class="card-title">📝 改稿建议</div>
+      <div id="suggestionsList"></div>
+    </div>
+
+    <!-- F: Detail Accordion -->
+    <div class="card" id="detailCard">
+      <div class="card-title">📋 详细诊断</div>
+      <div id="accordionContainer"></div>
+    </div>
+
+    <!-- G: Actions -->
+    <div class="actions">
+      <button class="btn-action" onclick="copyReport()">📋 复制报告</button>
+      <button class="btn-action" onclick="goToInput()">🔄 重新诊断</button>
+    </div>
+    <div class="card">
+      <div class="feedback" id="feedbackArea">
+        <div class="feedback-title">这份报告对你有帮助吗？</div>
+        <div class="feedback-btns">
+          <span class="feedback-btn" onclick="submitFeedback(this,4)">😊 非常有帮助</span>
+          <span class="feedback-btn" onclick="submitFeedback(this,3)">🙂 有些帮助</span>
+          <span class="feedback-btn" onclick="submitFeedback(this,2)">😐 一般</span>
+          <span class="feedback-btn" onclick="submitFeedback(this,1)">😕 没帮助</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ============================================================
+// MOCK DATA
+// ============================================================
+const MOCK_REPORT = {
+  basic_info: {
+    title: "明月照君归",
+    genre: "女频",
+    themes: ["古装宫斗","权谋复仇","虐恋情深","兄弟夺嫡"],
+    episode_count: 11,
+    time_setting: "古代架空",
+    plot_summary: "阙月为保护姐姐遗孤石泽承，背叛了与晋王石蕴川的海誓山盟，嫁给太子石蕴山。五年后齐王谋反，阙月被迫向石蕴川求救。石蕴川平叛后以阙月为赏赐要求，两人旧情复燃又互相折磨。",
+    plot_features: "双时间线叙事，虐恋情深与宫廷权谋并行"
+  },
+  total_score: 77,
+  total_grade: "B",
+  risk_warnings: [],
+  sections: [
+    { key:"narrative", name:"叙事基因", weight:"35%", score:76.6, grade:"B" },
+    { key:"market", name:"市场共鸣", weight:"30%", score:77.0, grade:"B" },
+    { key:"compliance", name:"合规性", weight:"15%", score:86.8, grade:"A+" },
+    { key:"commercial", name:"商业化", weight:"20%", score:70.8, grade:"B" }
+  ],
+  dimensions: [
+    { section:"A", key:"hook_strength", name:"钩子强度", score:72, grade:"B",
+      analysis:["开篇设置具备基础吸引力：第一集以阙月穿嫁衣上花轿开场，通过闪回展现与石蕴川的山盟海誓，形成"背叛誓言"的情感冲突。","身份冲突制造悬念：石蕴川在婚礼现场突然出现，"我来娶你了,你要不要跟我走?"的质问直接点燃冲突。","时间跨越增加期待感：五年后的时间跳跃设置让观众对人物关系的变化产生好奇。"],
+      improvements:["前30秒信息密度不足，建议将石蕴川闯入婚礼的场面前置，或在开头直接展现阙月的内心挣扎与外在压力的对比。","悬念设置需要更强烈，可增加更具体的报复预告或神秘元素。","角色魅力展现不够充分，建议增加其武功或智谋的具体表现。"] },
+    { section:"A", key:"excitement_density", name:"爽点密度", score:75, grade:"B",
+      analysis:["情感虐恋爽点设计到位：阙月为保护石蕴山和石泽承主动承受石蕴川的折辱，体现了女频观众喜爱的"为爱牺牲"情节。","权力博弈提供反转快感：石蕴川平叛后要求阙月作为赏赐的强势要求满足了女频观众对霸道男主的期待。","保护欲激发共鸣：阙月为保护石泽承不惜以身挡剑。"],
+      improvements:["爽点节奏分布不均：前五集爽点密度偏低，建议在第二、三集增加小型情感高潮或意外反转。","缺乏视觉化爽点：可增加石蕴川的武打戏份或阙月医术展示等技能型爽点。"] },
+    { section:"A", key:"pacing", name:"节奏与步调", score:74, grade:"B",
+      analysis:["整体节奏偏向传统长剧，前三集主要在建立人物关系和回顾过往。","对话密度适中，角色对话基本符合古装剧特色。","场景转换较为流畅，时空转换不突兀。"],
+      improvements:["信息释放过于密集：建议将部分背景信息分散到后续集数。","单场戏时长控制不够精准：部分对话场景偏长，建议压缩。","情节推进缺乏紧迫感，建议增加时间限制或威胁升级。"] },
+    { section:"A", key:"plot_coherence", name:"情节连贯性", score:82, grade:"A",
+      analysis:["主线脉络清晰完整，情节发展逻辑清晰，因果关系明确。","人物动机合理一致：阙月为保护姐姐遗孤而牺牲个人幸福，石蕴川因爱生恨又因爱而救。","伏笔呼应处理得当：多条线索相互呼应，构成完整的权谋网络。"],
+      improvements:["部分支线衔接可更紧密。","时间线跳转处可增加过渡标识。"] },
+    { section:"A", key:"character_appeal", name:"角色吸引力", score:80, grade:"A",
+      analysis:["女主角设定具备共鸣点：阙月"清冷隐忍,信守承诺"的性格符合女频观众喜爱。","男主角魅力鲜明：石蕴川的"桀骜不驯"与"心怀家国天下"形成反差萌。","配角功能性明确：石泽承的纯真可爱、石蕴山的阴险深沉等各有特色。"],
+      improvements:["反派工具人化严重，建议增加立体感。","女主角成长弧光需强化，增加主动出击情节。"] },
+    { section:"A", key:"dialogue_quality", name:"对白质量", score:76, grade:"B",
+      analysis:["古装韵味较为到位，台词具有古典美感。","情感表达有力度，关键台词能够有效传达人物情感。","人物语言有区分度。"],
+      improvements:["台词长度需要优化，长段独白建议拆分为短句。","现代网感不足，建议增加具有传播性的金句。"] },
+    { section:"A", key:"suspense_effectiveness", name:"悬念有效性", score:77, grade:"B",
+      analysis:["集集有钩子设计，悬念设置基本到位。","多层次悬念布局：情感、政治、生存三个层面。","伏笔埋设合理。"],
+      improvements:["悬念强度需要提升，部分集数结尾冲击力不够。","缺乏视觉化悬念，建议增加危险场面。"] },
+    { section:"B", key:"hit_potential", name:"爆款契合度", score:81, grade:"A",
+      analysis:["题材热度匹配度高：古装宫斗权谋题材与当前爆款高度吻合。","女频核心元素齐全。","权谋复仇双线并行，满足双重需求。"],
+      improvements:["需注意与同类爆款的差异化。","可强化"逆袭"元素以提升爽感。"] },
+    { section:"B", key:"originality", name:"原创性", score:73, grade:"B",
+      analysis:["人物关系设计有新意。","权谋布局相对复杂，比单纯爱恨更具层次感。","母子情感线独特。"],
+      improvements:["核心套路相对传统。","女主角成长弧光需要强化。"] },
+    { section:"B", key:"audience_attraction", name:"观众吸引力", score:79, grade:"B",
+      analysis:["女频受众定位精准。","情感冲突层次丰富。","角色魅力分布均衡。"],
+      improvements:["年轻观众适配度需要提升。","跨圈层吸引力有限。"] },
+    { section:"B", key:"user_stickiness", name:"用户粘性", score:76, grade:"B",
+      analysis:["连载潜力较强。","角色讨论度中等。","情感投入度较高。"],
+      improvements:["缺乏强互动元素。","二创素材不够丰富。"] },
+    { section:"B", key:"viral_potential", name:"传播潜力", score:74, grade:"B",
+      analysis:["古装视觉优势。","情感共鸣点明确。","台词传播性一般。"],
+      improvements:["缺乏病毒式传播点。","跨平台适配性需要提升。"] },
+    { section:"B", key:"ip_value", name:"IP衍生价值", score:72, grade:"B",
+      analysis:["世界观具备扩展性。","角色IP化潜力中等。","古装题材商业化成熟。"],
+      improvements:["独特标识需要强化。","商业化抓手不够明确。"] },
+    { section:"C", key:"content_compliance", name:"内容合规性", score:88, grade:"A+",
+      analysis:["政治背景安全可控：设定在架空时代。","暴力内容控制得当。","性内容处理适度。"],
+      improvements:[] },
+    { section:"C", key:"value_orientation", name:"价值观导向", score:85, grade:"A+",
+      analysis:["情感价值观相对正向。","家庭伦理观念健康。","女性形象塑造积极。"],
+      improvements:[] },
+    { section:"D", key:"production_difficulty", name:"制作难度", score:60, grade:"C",
+      analysis:["大型古装场景需要较高投入。","战争场面需要群演和特效。","服化道成本较高。"],
+      improvements:["精简部分大场面，用特写和剪辑技巧降低成本。","优化场景复用率。"] },
+    { section:"D", key:"monetization_potential", name:"变现潜力", score:78, grade:"B",
+      analysis:["虐恋情深题材付费意愿较高。","古装题材在多个平台表现稳定。","剧情高潮节点适合设置付费解锁。"],
+      improvements:["前3集付费转化点需要更强烈的悬念设计。","可增加更多适合打赏的名场面。"] }
+  ],
+  suggestions: [
+    { title:"强化开篇钩子设计", detail:"建议将第一集前30秒重新设计，可以石蕴川闯入婚礼现场作为开场，或者展现阙月在婚礼前的内心挣扎与外在压力的强烈对比，快速建立核心冲突和情感张力。" },
+    { title:"优化前三集节奏分布", detail:"将部分背景铺垫分散到后续集数，让前三集更聚焦于核心冲突的建立和升级。每集至少安排一个小型爽点或反转，保持观众的持续关注。" },
+    { title:"增加视觉化爽点元素", detail:"在保持情感虐恋主线的同时，增加一些动作场面或技能展示，如石蕴川的武功、阙月的医术等，为观众提供更丰富的观看体验。" },
+    { title:"压缩对白长度提升节奏感", detail:"将长段台词拆分为短句，增加对话的节奏感和冲击力。同时增加一些具有网络传播性的金句，提升台词的记忆度和传播价值。" },
+    { title:"强化悬念设置的冲击力", detail:"在现有悬念基础上增加更多视觉化和情节化的冲击元素，如危险场面、意外反转等，提升集尾钩子的吸引力。" },
+    { title:"增加角色独特性标识", detail:"为主要角色设计更多独特的行为习惯、标志性道具或经典台词，增强角色的记忆度和话题性，为后续IP开发打下基础。" }
+  ]
+};
+
+// Sample scripts loaded from external files
+const SAMPLE_SCRIPTS = {};
+const SAMPLE_FILES = {
+  ancient: 'samples/古装虐恋_明月照君归.txt',
+  modern: 'samples/现代甜宠_你好星期六.txt',
+  suspense: 'samples/悬疑犯罪_第七根琴弦.txt'
+};
+
+// Mock reports for different sample scripts
+const MOCK_REPORTS = {
+  ancient: MOCK_REPORT, // defined above, default
+
+  modern: {
+    basic_info: { title:"你好星期六", genre:"男女通吃", themes:["现代都市","甜宠恋爱","职场成长","治愈系"], episode_count:11, time_setting:"现代都市", plot_summary:"广告公司创意主管林念念在电梯偶遇启明集团少东家顾言泽，因品牌全案合作频繁接触。两人从甲乙方关系逐渐产生感情，经历职场流言、家庭阻力后最终走到一起。", plot_features:"轻喜剧节奏，职场线与感情线双线并行" },
+    total_score: 74, total_grade: "B", risk_warnings: [],
+    sections: [
+      { key:"narrative", name:"叙事基因", weight:"35%", score:73.2, grade:"B" },
+      { key:"market", name:"市场共鸣", weight:"30%", score:78.5, grade:"B" },
+      { key:"compliance", name:"合规性", weight:"15%", score:92.0, grade:"S" },
+      { key:"commercial", name:"商业化", weight:"20%", score:68.4, grade:"C" }
+    ],
+    dimensions: [
+      { section:"A", key:"hook_strength", name:"钩子强度", score:70, grade:"B", analysis:["电梯偶遇+工牌翻面的轻喜剧开场具备基础吸引力","甲乙方身份对立制造了天然冲突","男主角神秘感设置到位"], improvements:["前30秒缺乏强烈冲突或悬念","开篇情节偏常规，建议增加意外元素","角色魅力展现需要更快速有力"] },
+      { section:"A", key:"excitement_density", name:"爽点密度", score:72, grade:"B", analysis:["男主为女主怼职场小人的爽感到位","广告提案通过的职业成就爽点设计合理","告白场面具备情感爽点"], improvements:["前五集爽点密度偏低","缺乏视觉化高光时刻","甜宠互动密度可以再提升"] },
+      { section:"A", key:"pacing", name:"节奏与步调", score:71, grade:"B", analysis:["双线叙事节奏较为平稳","场景转换自然流畅","职场线和感情线交替推进合理"], improvements:["中段节奏偏慢，可压缩部分职场戏","信息释放过于平均，缺乏节奏变化","建议在中间集数增加强反转"] },
+      { section:"A", key:"plot_coherence", name:"情节连贯性", score:79, grade:"B", analysis:["主线逻辑完整自洽","人物动机合理一致","职场线和感情线交织紧密"], improvements:["陈昊反派线发展偏单薄","顾言泽的家庭背景线可更早铺垫"] },
+      { section:"A", key:"character_appeal", name:"角色吸引力", score:78, grade:"B", analysis:["女主角性格讨喜：聪明、努力、有点小迷糊","男主角冷面热心的反差萌设计到位","室友苏小小的闺蜜角色增添了喜剧效果"], improvements:["配角陈昊的反派形象过于扁平","男主角内心世界展示不够充分"] },
+      { section:"A", key:"dialogue_quality", name:"对白质量", score:74, grade:"B", analysis:["对白轻松自然，符合现代都市感","部分金句设计有传播性：如'同意。项目通过。'","人物语言区分度尚可"], improvements:["部分对话偏平淡缺乏记忆点","网感台词密度可提升","建议增加更多甜宠名场面台词"] },
+      { section:"A", key:"suspense_effectiveness", name:"悬念有效性", score:69, grade:"C", analysis:["年会事件制造了情感悬念","职场阴谋线提供了副线悬念","男主角的神秘过往制造了信息悬念"], improvements:["集尾钩子整体偏弱","甜宠剧的悬念强度天然受限","建议增加更多情感反转节点"] },
+      { section:"B", key:"hit_potential", name:"爆款契合度", score:82, grade:"A", analysis:["甜宠赛道长期热门，市场需求稳定","职场+恋爱双线是经过验证的爆款模式","都市背景降低了观众理解门槛"], improvements:["同质化竞争激烈，需要更鲜明的差异化","缺乏破圈级别的创新元素"] },
+      { section:"B", key:"originality", name:"原创性", score:71, grade:"B", analysis:["甲乙方恋爱的职场设定有一定新意","广告创意行业背景较为新鲜","搪瓷缸广告的情感切入点巧妙"], improvements:["核心恋爱模式偏传统霸总套路","人设组合缺乏突破性创新"] },
+      { section:"B", key:"audience_attraction", name:"观众吸引力", score:80, grade:"A", analysis:["女性受众定位精准","职场元素吸引都市白领群体","轻喜剧调性适合碎片化观看"], improvements:["男性受众吸引力有限","年龄层偏窄，主要集中在20-35岁"] },
+      { section:"B", key:"user_stickiness", name:"用户粘性", score:77, grade:"B", analysis:["甜宠向剧集天然具备追剧粘性","CP感是核心粘性驱动","职场成长线增加了代入感"], improvements:["缺乏深度讨论话题","剧情记忆点需要强化"] },
+      { section:"B", key:"viral_potential", name:"传播潜力", score:78, grade:"B", analysis:["甜宠名场面适合切片传播","都市场景视觉呈现成本低效果好","告白场面具有传播基因"], improvements:["缺乏现象级传播的爆点设计","话题营销点需要更加鲜明"] },
+      { section:"B", key:"ip_value", name:"IP衍生价值", score:70, grade:"B", analysis:["广告行业背景有品牌合作空间","角色IP化潜力中等","现代都市设定便于衍生"], improvements:["世界观扩展性有限","缺乏独特的IP符号"] },
+      { section:"C", key:"content_compliance", name:"内容合规性", score:93, grade:"S", analysis:["现代都市题材合规风险极低","无暴力、政治敏感内容","情感表达健康正向"], improvements:[] },
+      { section:"C", key:"value_orientation", name:"价值观导向", score:91, grade:"S", analysis:["展现了独立女性的职场奋斗","传递了真诚与共情的正向价值","恋爱关系建立在平等尊重基础上"], improvements:[] },
+      { section:"D", key:"production_difficulty", name:"制作难度", score:82, grade:"A", analysis:["现代都市场景制作成本可控","无特效需求","场景复用率高"], improvements:["广告拍摄场景需要一定布景投入"] },
+      { section:"D", key:"monetization_potential", name:"变现潜力", score:59, grade:"D", analysis:["甜宠剧付费意愿中等","品牌植入空间大","适合多平台分发"], improvements:["付费点设计不够强烈","缺乏让用户非看不可的强钩子","建议在关键情感节点设置更强的悬念"] }
+    ],
+    suggestions: [
+      { title:"强化前三集的冲突密度", detail:"电梯偶遇后应尽快制造更强的冲突或意外，如林念念在不知情的情况下当面吐槽甲方、或在提案中犯下大错被顾言泽当众指出等，快速建立看点。" },
+      { title:"提升甜宠互动频率", detail:"甜宠剧的核心是甜度。建议每集至少安排2-3个甜蜜互动小片段，可以是眼神交流、肢体接触、或双向暗恋的小细节。" },
+      { title:"深化反派角色", detail:"陈昊目前过于工具人化。建议赋予他合理的嫉妒动机和更立体的性格，让冲突更具可信度。" },
+      { title:"增加集尾强钩子", detail:"每集结尾需要更强的悬念或反转来驱动连续观看。如年会偶遇前女友、发现顾言泽与过世母亲的秘密等。" },
+      { title:"打造病毒传播名场面", detail:"设计2-3个极具传播力的名场面，如雨中送伞、办公室对峙、天台告白等，注重台词的金句感和画面的截图感。" }
+    ]
+  },
+
+  suspense: {
+    basic_info: { title:"第七根琴弦", genre:"男女通吃", themes:["悬疑犯罪","数据隐私","社会正义","职场暗战"], episode_count:10, time_setting:"现代都市", plot_summary:"产品经理周雨桐发现公司非法贩卖用户数据后被伪装成自杀谋杀。刑警沈夜通过指甲DNA、排风扇毛发、古琴中的SD卡等线索层层推进，最终揭露技术总监方旭为杀人凶手，CEO刘正廷为幕后黑手。", plot_features:"倒叙结构，多线索交叉推进，社会议题嵌入犯罪叙事" },
+    total_score: 81, total_grade: "A", risk_warnings: [],
+    sections: [
+      { key:"narrative", name:"叙事基因", weight:"35%", score:83.4, grade:"A" },
+      { key:"market", name:"市场共鸣", weight:"30%", score:79.3, grade:"B" },
+      { key:"compliance", name:"合规性", weight:"15%", score:82.0, grade:"A" },
+      { key:"commercial", name:"商业化", weight:"20%", score:76.6, grade:"B" }
+    ],
+    dimensions: [
+      { section:"A", key:"hook_strength", name:"钩子强度", score:88, grade:"A+", analysis:["开篇以死亡现场+指甲DNA线索切入，30秒内建立核心悬念","'这不是自杀，是精心伪装的谋杀'的判断瞬间抓住观众","倒叙结构天然制造了信息差"], improvements:["可在开头增加受害者视角的闪回片段","增加感官细节的描写增强代入感"] },
+      { section:"A", key:"excitement_density", name:"爽点密度", score:82, grade:"A", analysis:["每一个证据发现都构成一个小高潮","真相逐层揭开的推理快感设计精准","最终正义得到伸张的大爽点完整"], improvements:["中间段落可增加更多意外反转","建议增加刑警与嫌疑人的智力博弈场面"] },
+      { section:"A", key:"pacing", name:"节奏与步调", score:84, grade:"A", analysis:["倒叙+顺叙交叉的节奏感强","每集都有新线索推进，信息释放节奏合理","审讯场景与调查场景交替切换节奏好"], improvements:["第6-7集节奏可以更紧凑","部分对话场景可以通过画面叙事替代"] },
+      { section:"A", key:"plot_coherence", name:"情节连贯性", score:86, grade:"A+", analysis:["推理逻辑严密，证据链完整","人物动机合理：受害者的正义感、凶手的利益驱动、同事的暗恋心理都自洽","时间线处理清晰，72小时结构让叙事更加紧凑"], improvements:["赵海的暗恋支线与主线的关联可更紧密"] },
+      { section:"A", key:"character_appeal", name:"角色吸引力", score:83, grade:"A", analysis:["沈夜的正直刑警形象具备强烈的角色魅力","周雨桐虽已死亡但通过闪回展现的勇气令人动容","多个嫌疑人各有特色，增加了推理趣味"], improvements:["沈夜的个人背景和性格深度需要更多展示","调查记者徐然可以有更多戏份"] },
+      { section:"A", key:"dialogue_quality", name:"对白质量", score:80, grade:"A", analysis:["审讯对话张力十足","沈夜的台词简洁有力，符合刑警人设","'法律也许迟到，但不会缺席'等台词有记忆点"], improvements:["部分解释性对话过多","建议增加更多具有冲击力的短句对白"] },
+      { section:"A", key:"suspense_effectiveness", name:"悬念有效性", score:85, grade:"A+", analysis:["多层悬念嵌套：谁是凶手→为什么杀人→幕后黑手是谁","'第七根琴弦'的暗号设计巧妙","每集结尾都有强悬念钩子"], improvements:["最终BOSS的揭露可以更具戏剧性","建议增加一个出乎意料的反转"] },
+      { section:"B", key:"hit_potential", name:"爆款契合度", score:83, grade:"A", analysis:["悬疑犯罪赛道持续升温","数据隐私题材紧扣当下社会热点","短剧+悬疑的组合已有成功先例"], improvements:["需要与其他悬疑短剧差异化","社会议题的呈现需要更加巧妙"] },
+      { section:"B", key:"originality", name:"原创性", score:79, grade:"B", analysis:["数据犯罪+传统推理的结合较为新鲜","古琴藏SD卡的设计有创意","受害者作为隐性主角的叙事视角独特"], improvements:["基础推理框架偏传统","凶手的犯罪手法可以更有创意"] },
+      { section:"B", key:"audience_attraction", name:"观众吸引力", score:80, grade:"A", analysis:["悬疑题材男女通吃","社会正义主题引发广泛共鸣","推理解谜满足观众参与感"], improvements:["部分专业术语可能造成理解障碍","需要平衡推理深度与大众接受度"] },
+      { section:"B", key:"user_stickiness", name:"用户粘性", score:78, grade:"B", analysis:["悬疑剧天然具备强追剧粘性","每集新线索驱动连续观看","真相揭晓的期待感持续维持"], improvements:["一次性追完后复看动力不足","缺乏可持续讨论的开放性话题"] },
+      { section:"B", key:"viral_potential", name:"传播潜力", score:76, grade:"B", analysis:["推理解密内容适合二创分析","数据隐私话题具有社会传播力","悬疑反转片段适合短视频传播"], improvements:["视觉化传播素材偏少","建议增加更多适合截图传播的名场面"] },
+      { section:"B", key:"ip_value", name:"IP衍生价值", score:72, grade:"B", analysis:["沈夜这个刑警角色具备系列化潜力","可发展为单元剧模式","社会议题犯罪系列有市场"], improvements:["世界观需要更多独特设定","系列化框架尚未明确建立"] },
+      { section:"C", key:"content_compliance", name:"内容合规性", score:80, grade:"A", analysis:["犯罪内容呈现克制，无过度血腥描写","正义最终得到伸张，价值导向正确","涉及数据犯罪的描写未提供具体犯罪方法"], improvements:["部分犯罪细节描写需要注意尺度","建议增加法治教育元素"] },
+      { section:"C", key:"value_orientation", name:"价值观导向", score:84, grade:"A", analysis:["传递了坚守正义、不畏强权的正向价值观","展现了普通人保护公众利益的勇气","法律面前人人平等的主题鲜明"], improvements:["可以更多展现法治力量的正面形象"] },
+      { section:"D", key:"production_difficulty", name:"制作难度", score:72, grade:"B", analysis:["场景以室内为主，制作成本可控","无大型特效需求","需要较强的演员表演功力"], improvements:["审讯、法庭等场景需要专业布景","多时间线叙事对剪辑要求较高"] },
+      { section:"D", key:"monetization_potential", name:"变现潜力", score:80, grade:"A", analysis:["悬疑剧的悬念天然适合付费模式","每集的信息差设计可引导付费解锁","社会话题剧具备品牌合作空间"], improvements:["付费点设计需要更精确","建议在关键证据揭露前设置付费节点"] }
+    ],
+    suggestions: [
+      { title:"增加开篇的感官冲击", detail:"建议在第一集开头增加受害者视角的短暂闪回：周雨桐在黑暗中挣扎的几秒画面，或她临死前看到的最后一幕，增加观众的情感投入和紧迫感。" },
+      { title:"强化智力博弈场面", detail:"沈夜与嫌疑人之间的审讯对抗可以更加精彩。建议增加沈夜使用心理战术、设置语言陷阱等桥段，提升推理对决的观赏性。" },
+      { title:"深化沈夜的角色背景", detail:"沈夜的个人故事（如他师父的故事、他坚守正义的原因）需要更多篇幅展示，让观众不仅追案件，也追角色。" },
+      { title:"优化最终反转的戏剧性", detail:"CEO刘正廷作为幕后黑手的揭露目前偏平淡。建议增加一个意想不到的转折，如刘正廷与沈夜之间存在某种联系，或关键证据的获取经历了更大的波折。" },
+      { title:"强化社会议题的呈现方式", detail:"数据隐私话题是亮点，但呈现方式偏说教。建议通过具体案例（如某个普通人因数据泄露遭受的损失）来展现，让抽象议题变得可感知。" },
+      { title:"设计更多适合传播的名场面", detail:"增加2-3个高度视觉化的场景，如沈夜在证物室的独白、法庭上的证据展示、真相大白时各角色的反应等，适合截图和短视频传播。" }
+    ]
+  }
+};
+
+// Current active report data
+let currentReportData = MOCK_REPORT;
+
+// ============================================================
+// GRADE COLORS
+// ============================================================
+function gradeColor(grade) {
+  const map = { 'S':'#FF4D4F','A+':'#FA8C16','A':'#FAAD14','B':'#4F6EF7','C':'#8C8C8C','D':'#8C8C8C' };
+  return map[grade] || '#8C8C8C';
+}
+function gradeDesc(grade) {
+  const map = { 'S':'极具爆款潜力','A+':'商业潜力优秀','A':'商业潜力良好','B':'商业潜力中等，需打磨','C':'商业潜力较弱','D':'不建议投入' };
+  return map[grade] || '';
+}
+function gradeBg(grade) {
+  const map = { 'S':'#FFF1F0','A+':'#FFF7E6','A':'#FFFBE6','B':'#EEF1FE','C':'#F5F5F5','D':'#F5F5F5' };
+  return map[grade] || '#F5F5F5';
+}
+
+// ============================================================
+// PAGE NAVIGATION
+// ============================================================
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+function goToInput() {
+  showPage('pageInput');
+}
+
+// ============================================================
+// INPUT PAGE
+// ============================================================
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.getElementById('pasteArea').style.display = tab === 'paste' ? 'block' : 'none';
+  document.getElementById('uploadArea').style.display = tab === 'upload' ? 'block' : 'none';
+  if(tab === 'upload') document.getElementById('uploadArea').classList.add('active-tab');
+  updateBtn();
+}
+
+const scriptInput = document.getElementById('scriptInput');
+const charCount = document.getElementById('charCount');
+const btnStart = document.getElementById('btnStart');
+
+scriptInput.addEventListener('input', () => {
+  charCount.textContent = scriptInput.value.length.toLocaleString();
+  updateBtn();
+});
+
+function updateBtn() {
+  const hasText = scriptInput.value.trim().length > 0;
+  const hasFile = document.getElementById('fileInfo').classList.contains('show');
+  btnStart.disabled = !(hasText || hasFile);
+}
+
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('fileMeta').textContent = `${(file.size/1024).toFixed(0)} KB · 已就绪`;
+  document.getElementById('fileInfo').classList.add('show');
+  document.getElementById('uploadArea').style.display = 'none';
+  updateBtn();
+  // Read file content
+  const reader = new FileReader();
+  reader.onload = (ev) => { scriptInput.value = ev.target.result; charCount.textContent = scriptInput.value.length.toLocaleString(); };
+  reader.readAsText(file);
+}
+
+function removeFile() {
+  document.getElementById('fileInfo').classList.remove('show');
+  document.getElementById('uploadArea').style.display = 'block';
+  document.getElementById('fileInput').value = '';
+  scriptInput.value = '';
+  charCount.textContent = '0';
+  updateBtn();
+}
+
+let currentSampleType = 'ancient'; // default
+function loadSample(type) {
+  currentSampleType = type;
+  // If already cached
+  if (SAMPLE_SCRIPTS[type]) {
+    scriptInput.value = SAMPLE_SCRIPTS[type];
+    charCount.textContent = scriptInput.value.length.toLocaleString();
+    switchTab('paste');
+    updateBtn();
+    showToast('已加载示例剧本');
+    return;
+  }
+  // Fetch from external file
+  const file = SAMPLE_FILES[type];
+  if (!file) return;
+  showToast('正在加载示例剧本...');
+  fetch(file).then(r => {
+    if (!r.ok) throw new Error('文件加载失败');
+    return r.text();
+  }).then(text => {
+    SAMPLE_SCRIPTS[type] = text;
+    scriptInput.value = text;
+    charCount.textContent = scriptInput.value.length.toLocaleString();
+    switchTab('paste');
+    updateBtn();
+    showToast('已加载示例剧本');
+  }).catch(() => {
+    // Fallback: use inline short version
+    showToast('加载文件失败，使用内置简版');
+    const fallback = {
+      ancient: '第一集\n\n【场景：顾国公府 · 正厅 · 日】\n\n（大红灯笼高挂，喜乐震天。阙月身穿大红嫁衣，端坐在花轿中。）\n\n阙月（内心独白）：阿川，对不起……我等不到你了。\n\n（闪回——石蕴川牵着阙月的手）\n石蕴川：月儿，等我回来，我此生只娶你一人。\n\n（花轿落地。忽然马蹄声急促传来——）\n石蕴川：慢着！！\n\n（石蕴川一身戎装，策马冲到府门前。）\n石蕴川：阙月！我来娶你了！\n\n（阙月从袖中抽出发簪，猛然刺向他。）\n阙月：你我之间，再无瓜葛。\n\n字幕：五年后',
+      modern: '第一集\n\n【场景：CBD写字楼 · 电梯间 · 早晨】\n\n（林念念抱着文件踩着高跟鞋往电梯跑。电梯门正在关闭——一只手挡住了门。顾言泽没有看她，目光在手机上。）\n\n林念念：谢谢！\n（她冲进电梯，脚下一滑，文件散了一地。）\n\n顾言泽：第二十七层？\n林念念：你怎么知道？\n顾言泽：你的工牌。挂反了。',
+      suspense: '第一集\n\n【场景：某市公安局 · 刑警队 · 夜】\n\n沈夜：死者周雨桐，27岁。法医初判——溺亡。\n陈叔：自杀结案？\n沈夜：你看她的指甲。指甲缝里有别人的皮肤组织。一个自杀的人，为什么指甲里会有别人的皮肤？\n\n沈夜：这不是自杀。是一场精心伪装的谋杀。'
+    };
+    scriptInput.value = fallback[type] || '';
+    charCount.textContent = scriptInput.value.length.toLocaleString();
+    switchTab('paste');
+    updateBtn();
+  });
+}
+
+// ============================================================
+// PROGRESS PAGE
+// ============================================================
+let evalTimer = null;
+
+function startEval() {
+  if (scriptInput.value.trim().length < 500) {
+    showToast('剧本内容不足 500 字，建议上传更完整的剧本');
+    return;
+  }
+  showPage('pageProgress');
+  runProgress();
+}
+
+function runProgress() {
+  const steps = document.querySelectorAll('#stepsList li');
+  const fill = document.getElementById('progressFill');
+  const pct = document.getElementById('progressPct');
+  let current = 0;
+
+  // Reset
+  steps.forEach(s => { s.className = 'pending'; s.querySelector('.icon').textContent = '○'; });
+
+  function advance() {
+    if (current > 0) {
+      steps[current-1].className = 'done';
+      steps[current-1].querySelector('.icon').textContent = '✓';
+    }
+    if (current < 6) {
+      steps[current].className = 'active';
+      steps[current].querySelector('.icon').textContent = '◉';
+      const p = Math.round(((current + 0.5) / 6) * 100);
+      fill.style.width = p + '%';
+      pct.textContent = p + '%';
+      current++;
+      evalTimer = setTimeout(advance, 800 + Math.random() * 600);
+    } else {
+      fill.style.width = '100%';
+      pct.textContent = '100%';
+      // Select mock report based on sample type
+      currentReportData = MOCK_REPORTS[currentSampleType] || MOCK_REPORT;
+      setTimeout(() => renderReport(currentReportData), 400);
+    }
+  }
+  evalTimer = setTimeout(advance, 500);
+}
+
+function cancelEval() {
+  clearTimeout(evalTimer);
+  showPage('pageInput');
+}
+
+// ============================================================
+// REPORT PAGE
+// ============================================================
+function renderReport(data) {
+  showPage('pageReport');
+
+  // Title
+  document.getElementById('reportTitle').textContent = `《${data.basic_info.title}》诊断报告`;
+  document.getElementById('reportMeta').textContent = `${data.basic_info.genre} · ${data.basic_info.themes.join('、')} · ${data.basic_info.episode_count}集`;
+
+  // Score ring animation
+  const color = gradeColor(data.total_grade);
+  const ringFill = document.getElementById('scoreRingFill');
+  ringFill.style.stroke = color;
+  const circumference = 2 * Math.PI * 60; // ~377
+  const offset = circumference * (1 - data.total_score / 100);
+  setTimeout(() => { ringFill.style.strokeDashoffset = offset; }, 100);
+
+  // Animate number
+  animateNumber('scoreNumber', 0, data.total_score, 1200);
+
+  // Grade badge
+  const badge = document.getElementById('gradeBadge');
+  badge.textContent = data.total_grade + '级';
+  badge.style.background = gradeBg(data.total_grade);
+  badge.style.color = color;
+  document.getElementById('gradeDesc').textContent = gradeDesc(data.total_grade);
+
+  // Warnings
+  if (data.risk_warnings.length > 0) {
+    document.getElementById('warningBanner').style.display = 'flex';
+    document.getElementById('warningText').textContent = data.risk_warnings[0];
+  } else {
+    document.getElementById('warningBanner').style.display = 'none';
+  }
+
+  // Section scores
+  const secHtml = data.sections.map(s => `
+    <div class="section-card" onclick="scrollToSection('${s.key}')">
+      <div class="label">${s.name}</div>
+      <div class="score" style="color:${gradeColor(s.grade)}">${s.score}</div>
+      <div class="bar"><div class="bar-fill" style="width:${s.score}%;background:${gradeColor(s.grade)}"></div></div>
+      <div class="grade" style="color:${gradeColor(s.grade)}">${s.grade}级 · 权重${s.weight}</div>
+    </div>
+  `).join('');
+  document.getElementById('sectionScores').innerHTML = secHtml;
+
+  // Radar chart
+  renderRadar(data.dimensions);
+
+  // Highlights
+  const sorted = [...data.dimensions].sort((a,b) => b.score - a.score);
+  const good = sorted.slice(0, 4);
+  const bad = sorted.slice(-4).reverse();
+  document.getElementById('goodDims').innerHTML = good.map(d => `
+    <div class="highlight-tag good"><span class="dim-name">${d.name}</span><span class="dim-score">${d.score} ${d.grade}</span></div>
+  `).join('');
+  document.getElementById('badDims').innerHTML = bad.map(d => `
+    <div class="highlight-tag bad"><span class="dim-name">${d.name}</span><span class="dim-score">${d.score} ${d.grade}</span></div>
+  `).join('');
+
+  // Suggestions
+  document.getElementById('suggestionsList').innerHTML = data.suggestions.map((s,i) => `
+    <div class="suggestion-item">
+      <span class="suggestion-num">${i+1}</span><span class="suggestion-title">${s.title}</span>
+      <div class="suggestion-detail">${s.detail}</div>
+    </div>
+  `).join('');
+
+  // Detail accordion
+  const sectionMap = { A:'叙事与剧本基因', B:'市场共鸣与竞争定位', C:'合规性评估', D:'商业化与ROI展望' };
+  const sectionKeys = ['A','B','C','D'];
+  const sectionKeyToKey = { A:'narrative', B:'market', C:'compliance', D:'commercial' };
+  let accHtml = '';
+  for (const sk of sectionKeys) {
+    const dims = data.dimensions.filter(d => d.section === sk);
+    const secScore = data.sections.find(s => s.key === sectionKeyToKey[sk]);
+    accHtml += `
+      <div class="accordion-header" id="section-${sectionKeyToKey[sk]}" onclick="toggleAccordion(this)">
+        <div class="left"><span>${sk}. ${sectionMap[sk]}</span><span style="color:${gradeColor(secScore.grade)};font-size:14px;font-weight:400">${secScore.score}分</span></div>
+        <span class="arrow">▶</span>
+      </div>
+      <div class="accordion-body">
+        ${dims.map(d => `
+          <div class="dim-block">
+            <div class="dim-header">
+              <span class="dim-name-label">${d.name}</span>
+              <span class="dim-score-badge" style="background:${gradeBg(d.grade)};color:${gradeColor(d.grade)}">${d.score}分 ${d.grade}级</span>
+            </div>
+            <ol class="dim-analysis">${d.analysis.map(a => `<li>${a}</li>`).join('')}</ol>
+            ${d.improvements.length ? `<div class="dim-improvements-title">可打磨点：</div><ol class="dim-improvements">${d.improvements.map(m => `<li>${m}</li>`).join('')}</ol>` : ''}
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+  document.getElementById('accordionContainer').innerHTML = accHtml;
+
+  // Reset feedback
+  document.querySelectorAll('.feedback-btn').forEach(b => b.classList.remove('selected'));
+}
+
+function toggleAccordion(el) {
+  el.classList.toggle('open');
+}
+
+function scrollToSection(key) {
+  const el = document.getElementById('section-' + key);
+  if (el) {
+    if (!el.classList.contains('open')) el.classList.add('open');
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+// ============================================================
+// RADAR CHART
+// ============================================================
+function renderRadar(dims) {
+  const chart = echarts.init(document.getElementById('radarChart'));
+  const sectionColors = { A:'#4F6EF7', B:'#8B5CF6', C:'#00B578', D:'#FA8C16' };
+  const indicator = dims.map(d => ({ name: d.name, max: 100, color: sectionColors[d.section] || '#4F6EF7' }));
+  const values = dims.map(d => d.score);
+
+  chart.setOption({
+    radar: {
+      indicator,
+      radius: '65%',
+      axisName: { fontSize: 11 },
+      splitArea: { areaStyle: { color: ['#fff','#F7F8FA','#fff','#F7F8FA','#fff'] } },
+      splitLine: { lineStyle: { color: '#E5E6EB' } },
+      axisLine: { lineStyle: { color: '#E5E6EB' } }
+    },
+    series: [{
+      type: 'radar',
+      data: [{ value: values, name: '评分',
+        areaStyle: { color: 'rgba(79,110,247,0.12)' },
+        lineStyle: { color: '#4F6EF7', width: 2 },
+        itemStyle: { color: '#4F6EF7' }
+      }]
+    }],
+    tooltip: { trigger:'item' }
+  });
+  window.addEventListener('resize', () => chart.resize());
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function animateNumber(elId, from, to, duration) {
+  const el = document.getElementById(elId);
+  const start = performance.now();
+  function update(now) {
+    const progress = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+    el.textContent = Math.round(from + (to - from) * eased);
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function copyReport() {
+  const data = currentReportData;
+  let text = `《${data.basic_info.title}》短剧商业潜力诊断报告\n`;
+  text += `总分：${data.total_score}/100（${data.total_grade}级）\n\n`;
+  text += `频类：${data.basic_info.genre}\n`;
+  text += `题材：${data.basic_info.themes.join('、')}\n\n`;
+  text += `【板块得分】\n`;
+  data.sections.forEach(s => { text += `${s.name}：${s.score}（${s.grade}级）\n`; });
+  text += `\n【改稿建议】\n`;
+  data.suggestions.forEach((s,i) => { text += `${i+1}. ${s.title}：${s.detail}\n`; });
+  navigator.clipboard.writeText(text).then(() => showToast('已复制到剪贴板'));
+}
+
+function submitFeedback(el, rating) {
+  document.querySelectorAll('.feedback-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  showToast('感谢反馈！');
+}
+</script>
+</body>
+</html>
