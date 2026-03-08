@@ -534,6 +534,46 @@ const MOCK_REPORTS = {
   }
 };
 
+// Custom upload generic mock report (used when user uploads their own script)
+let customFileName = '';
+const CUSTOM_MOCK_REPORT = {
+  basic_info: { title:"用户上传剧本", genre:"待分析", themes:["待分析"], episode_count:0, time_setting:"待分析", plot_summary:"本报告基于用户上传的剧本内容生成。完整版评估需接入AI模型进行深度分析。", plot_features:"Demo模式下使用通用模板评估" },
+  total_score: 72, total_grade: "B", risk_warnings: [],
+  sections: [
+    { key:"narrative", name:"叙事基因", weight:"35%", score:73.0, grade:"B" },
+    { key:"market", name:"市场共鸣", weight:"30%", score:71.5, grade:"B" },
+    { key:"compliance", name:"合规性", weight:"15%", score:85.0, grade:"A+" },
+    { key:"commercial", name:"商业化", weight:"20%", score:70.0, grade:"B" }
+  ],
+  dimensions: [
+    { section:"A", key:"hook_strength", name:"钩子强度", score:72, grade:"B", analysis:["开篇设置具备一定吸引力，能初步吸引观众注意。","冲突元素的引入时机基本合理。","角色出场方式有一定记忆点。"], improvements:["建议在前30秒内制造更强烈的悬念或冲突。","可增加视觉冲击力更强的开场画面。","角色魅力展现可以更快速有力。"] },
+    { section:"A", key:"excitement_density", name:"爽点密度", score:70, grade:"B", analysis:["情节中包含基础爽点设计。","情感冲突提供了一定的观看快感。","剧情转折具备基本反转效果。"], improvements:["爽点分布均匀度有待优化。","建议增加视觉化高光时刻。","可增加更多类型的爽点覆盖。"] },
+    { section:"A", key:"pacing", name:"节奏与步调", score:73, grade:"B", analysis:["整体节奏基本流畅。","场景转换较为自然。","信息释放节奏中规中矩。"], improvements:["部分段落节奏可以更紧凑。","建议在关键节点加速信息释放。","单场戏时长控制可以更精准。"] },
+    { section:"A", key:"plot_coherence", name:"情节连贯性", score:78, grade:"B", analysis:["主线逻辑基本清晰。","人物动机总体合理。","因果关系基本自洽。"], improvements:["部分支线衔接可更紧密。","伏笔呼应可以更加精密。"] },
+    { section:"A", key:"character_appeal", name:"角色吸引力", score:75, grade:"B", analysis:["主角设定具备一定共鸣点。","角色性格具有辨识度。","人物关系网络基本完整。"], improvements:["角色深度可以进一步挖掘。","配角功能性需要强化。","建议增加角色成长弧光。"] },
+    { section:"A", key:"dialogue_quality", name:"对白质量", score:72, grade:"B", analysis:["对白风格基本匹配题材。","关键台词具备一定力度。","人物语言有基础区分度。"], improvements:["金句密度有待提升。","部分台词可以更具传播性。","建议压缩长段对白。"] },
+    { section:"A", key:"suspense_effectiveness", name:"悬念有效性", score:71, grade:"B", analysis:["悬念设置基本到位。","集尾钩子有一定吸引力。","信息差制造了基础期待感。"], improvements:["悬念层次可以更丰富。","建议增加多线悬念交织。","集尾钩子冲击力需要加强。"] },
+    { section:"B", key:"hit_potential", name:"爆款契合度", score:74, grade:"B", analysis:["题材具备一定市场热度。","核心元素覆盖较为完整。","具备一定的商业化基础。"], improvements:["需要更鲜明的差异化定位。","对标爆款分析可以更精准。"] },
+    { section:"B", key:"originality", name:"原创性", score:70, grade:"B", analysis:["在既有框架内有一定创新尝试。","部分设定具备新意。","核心机制有发展空间。"], improvements:["整体创新力度有待加强。","人物关系设计可以更具突破性。"] },
+    { section:"B", key:"audience_attraction", name:"观众吸引力", score:73, grade:"B", analysis:["目标受众定位基本清晰。","情感冲突能引发一定共鸣。","角色魅力具备基础吸引力。"], improvements:["受众覆盖面可以更广。","情感投入点需要更加精准。"] },
+    { section:"B", key:"user_stickiness", name:"用户粘性", score:70, grade:"B", analysis:["剧情具备基础追看动力。","角色发展线提供了一定连续性。","情感线索保持了基本牵引力。"], improvements:["连载钩子强度需要提升。","讨论话题点需要更加鲜明。"] },
+    { section:"B", key:"viral_potential", name:"传播潜力", score:69, grade:"C", analysis:["部分场景具备截图传播基础。","题材具有一定话题性。","角色具备基础讨论度。"], improvements:["缺乏现象级传播爆点。","金句传播性需要大幅提升。","建议打造更多视觉化名场面。"] },
+    { section:"B", key:"ip_value", name:"IP衍生价值", score:67, grade:"C", analysis:["角色具备一定IP化基础。","世界观有初步扩展空间。","题材适合跨媒体尝试。"], improvements:["IP符号需要更加独特鲜明。","系列化框架有待建立。"] },
+    { section:"C", key:"content_compliance", name:"内容合规性", score:84, grade:"A", analysis:["内容整体合规风险可控。","暴力和敏感内容尺度基本合理。","价值导向未见明显偏差。"], improvements:["建议对部分边界内容进行复查。","确保全部内容符合最新审查标准。"] },
+    { section:"C", key:"value_orientation", name:"价值观导向", score:86, grade:"A+", analysis:["核心价值观方向正确。","情感表达基本健康。","人物行为逻辑符合正向引导。"], improvements:["可以更积极地传递正向价值。"] },
+    { section:"D", key:"production_difficulty", name:"制作难度", score:75, grade:"B", analysis:["场景复杂度中等。","特效需求基本可控。","演员要求适中。"], improvements:["部分场景可以简化以降低成本。","建议优化场景复用率。"] },
+    { section:"D", key:"monetization_potential", name:"变现潜力", score:66, grade:"C", analysis:["具备基础付费点设计空间。","广告植入有一定适配度。","平台分发具备可行性。"], improvements:["付费点设计需要更加强烈。","建议在关键剧情节点设置更强的付费钩子。","商业化元素可以更加丰富。"] }
+  ],
+  suggestions: [
+    { title:"强化开篇冲突设计", detail:"建议在第一集前30秒内建立更强烈的核心冲突或悬念，快速抓住观众注意力。可以考虑使用倒叙、悬念前置等手法。" },
+    { title:"提升爽点密度和分布", detail:"建议每集至少安排2-3个明确的爽点（情感爽点、反转爽点、技能展示爽点等），确保分布均匀，避免长段平淡铺垫。" },
+    { title:"优化节奏把控", detail:"压缩信息密度较低的对话场景，加速关键剧情推进。每集时长控制需更精准，确保信息释放节奏匹配短剧观看习惯。" },
+    { title:"深化角色魅力塑造", detail:"为主要角色设计更多独特的行为标识、经典台词和反差萌点，增强角色辨识度和讨论度。" },
+    { title:"设计更强的集尾钩子", detail:"每集结尾需要更强烈的悬念或反转来驱动付费/连续观看，建议在情感、危机、反转三个维度交替设置钩子。" },
+    { title:"打造可传播的名场面", detail:"设计2-3个极具视觉冲击力的标志性场景，注重台词金句感和画面截图感，为社交媒体传播提供素材。" }
+  ]
+};
+
 // Current active report data
 let currentReportData = MOCK_REPORT;
 
@@ -582,6 +622,11 @@ const btnStart = document.getElementById('btnStart');
 
 scriptInput.addEventListener('input', () => {
   charCount.textContent = scriptInput.value.length.toLocaleString();
+  // If user manually types/pastes, reset sample type to custom
+  if (currentSampleType !== 'custom' && !scriptInput._loadingSample) {
+    currentSampleType = 'custom';
+    customFileName = '';
+  }
   updateBtn();
 });
 
@@ -594,6 +639,8 @@ function updateBtn() {
 function handleFile(e) {
   const file = e.target.files[0];
   if (!file) return;
+  currentSampleType = 'custom';
+  customFileName = file.name.replace(/\.(txt|docx?|pdf)$/i, '');
   document.getElementById('fileName').textContent = file.name;
   document.getElementById('fileMeta').textContent = `${(file.size/1024).toFixed(0)} KB · 已就绪`;
   document.getElementById('fileInfo').classList.add('show');
@@ -617,7 +664,9 @@ function removeFile() {
 let currentSampleType = 'ancient'; // default
 function loadSample(type) {
   currentSampleType = type;
+  scriptInput._loadingSample = true;
   scriptInput.value = SAMPLE_SCRIPTS[type] || '';
+  scriptInput._loadingSample = false;
   charCount.textContent = scriptInput.value.length.toLocaleString();
   switchTab('paste');
   updateBtn();
@@ -664,7 +713,17 @@ function runProgress() {
       fill.style.width = '100%';
       pct.textContent = '100%';
       // Select mock report based on sample type
-      currentReportData = MOCK_REPORTS[currentSampleType] || MOCK_REPORT;
+      if (currentSampleType === 'custom') {
+        currentReportData = JSON.parse(JSON.stringify(CUSTOM_MOCK_REPORT));
+        // Try to extract title from file name or first line of script
+        const title = customFileName || scriptInput.value.trim().split('\n').find(l => l.trim() && !l.trim().startsWith('第')) || '用户上传剧本';
+        currentReportData.basic_info.title = title;
+        // Try to count episodes
+        const epMatches = scriptInput.value.match(/第[一二三四五六七八九十百千\d]+集/g);
+        if (epMatches) currentReportData.basic_info.episode_count = epMatches.length;
+      } else {
+        currentReportData = MOCK_REPORTS[currentSampleType] || MOCK_REPORT;
+      }
       setTimeout(() => renderReport(currentReportData), 400);
     }
   }
