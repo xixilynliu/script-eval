@@ -217,8 +217,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica
       <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
         <div class="upload-icon">📄</div>
         <div class="upload-text">拖拽文件到此处，或点击选择文件</div>
-        <div class="upload-hint">支持 .txt .docx，单文件最大 5MB</div>
-        <input type="file" id="fileInput" accept=".txt,.docx" style="display:none" onchange="handleFile(event)">
+        <div class="upload-hint">支持 .txt .docx .pdf，单文件最大 5MB</div>
+        <input type="file" id="fileInput" accept=".txt,.docx,.pdf" style="display:none" onchange="handleFile(event)">
       </div>
       <div class="file-info" id="fileInfo">
         <span style="font-size:24px">📄</span>
@@ -636,6 +636,8 @@ function updateBtn() {
   btnStart.disabled = !(hasText || hasFile);
 }
 
+let uploadedBinaryFile = false; // true if uploaded file is PDF/docx (can't read as text)
+
 function handleFile(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -645,14 +647,32 @@ function handleFile(e) {
   document.getElementById('fileMeta').textContent = `${(file.size/1024).toFixed(0)} KB · 已就绪`;
   document.getElementById('fileInfo').classList.add('show');
   document.getElementById('uploadArea').style.display = 'none';
+
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'txt') {
+    // Plain text: read content into textarea
+    uploadedBinaryFile = false;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      scriptInput._loadingSample = true;
+      scriptInput.value = ev.target.result;
+      scriptInput._loadingSample = false;
+      charCount.textContent = scriptInput.value.length.toLocaleString();
+    };
+    reader.readAsText(file);
+  } else {
+    // PDF/docx: binary format, can't extract text in browser without libraries
+    uploadedBinaryFile = true;
+    scriptInput._loadingSample = true;
+    scriptInput.value = `[已上传文件：${file.name}，${(file.size/1024).toFixed(0)} KB]\n\nDemo 模式下，PDF/DOCX 文件将使用通用评估模板生成报告。\n接入 AI 模型后可实现对 PDF/DOCX 文件内容的深度解析与评估。`;
+    scriptInput._loadingSample = false;
+    charCount.textContent = '—';
+  }
   updateBtn();
-  // Read file content
-  const reader = new FileReader();
-  reader.onload = (ev) => { scriptInput.value = ev.target.result; charCount.textContent = scriptInput.value.length.toLocaleString(); };
-  reader.readAsText(file);
 }
 
 function removeFile() {
+  uploadedBinaryFile = false;
   document.getElementById('fileInfo').classList.remove('show');
   document.getElementById('uploadArea').style.display = 'block';
   document.getElementById('fileInput').value = '';
@@ -679,7 +699,7 @@ function loadSample(type) {
 let evalTimer = null;
 
 function startEval() {
-  if (scriptInput.value.trim().length < 500) {
+  if (!uploadedBinaryFile && scriptInput.value.trim().length < 500) {
     showToast('剧本内容不足 500 字，建议上传更完整的剧本');
     return;
   }
